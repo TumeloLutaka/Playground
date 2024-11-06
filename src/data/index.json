@@ -1,0 +1,54 @@
+{
+  "skills": [
+    {
+      "id": "1",
+      "src": "./img/product-chain-1.png",
+      "title": "Front-End",
+      "description": "-"
+    },
+    {
+      "id": "2",
+      "src": "./img/tag-1.png",
+      "title": "Back-End",
+      "description": "-"
+    },
+    {
+      "id": "3",
+      "src": "./img/feather-pen-2.png",
+      "title": "UI & UX Design",
+      "description": "-"
+    },
+    {
+      "id": "4",
+      "src": "./img/feather-pen-1.png",
+      "title": "Webflow Development",
+      "description": "-"
+    }
+  ],
+  "projects": [
+    {
+      "href": "./Websites/How to Become a Developer - Responsive Portfolio Website From Scratch/",
+      "title": "Responsive Portfolio Website"
+    },
+    {
+      "href": "https://tumelo-lutaka.netlify.app/",
+      "title": "Tumelo Lutaka - Responsive Portfolio"
+    },
+    {
+      "href": "./Websites/Smoljames/reactjs-todolist/dist/",
+      "title": "Smoljames - React Todo App"
+    },
+    {
+      "href": "./Websites/Smoljames/nasa-react-app/dist/",
+      "title": "Smoljames - NASA ADOP project"
+    },
+    {
+      "href": "./Websites/Smoljames/river-fit/dist/",
+      "title": "Smoljames - River Fit Gym App"
+    },
+    {
+      "href": "./Websites/Smoljames/free-scribe/dist/",
+      "title": "Smoljames - FreeScribe Transcription and Translation"
+    }
+  ]
+}
