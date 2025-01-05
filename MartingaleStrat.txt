@@ -1,0 +1,278 @@
+(() => {
+  /**
+   * Implements a Martingale betting strategy with dynamic bet adjustment and milestone tracking.
+   *
+   * Strategy Overview:
+   * - Uses a progressive betting system that doubles bet amounts after losses
+   * - Implements small and large milestones to optimize betting efficiency
+   * - Tracks investment multiples and adjusts betting strategy dynamically
+   *
+   * Key Parameters:
+   * @constant {number} MULTIPLIER - Minimum multiplier required to win a round (4x in this implementation)
+   * @constant {number} martingaleValue - Exponential growth factor for bet progression (1.35)
+   * @constant {number} rounds - Maximum number of consecutive betting rounds (14)
+   */
+
+  // Select the game element for monitoring betting state
+  let targetElement = document.getElementById("game");
+
+  // Betting configuration constants
+  const MULTIPLIER = 4;
+  const baseMartingaleValue = 1.35;
+  let martingaleValue;
+  const rounds = 21;
+
+  // Tracking variables for betting progression
+  let currentRound = -1; // Start at -1 to account for initial round execution
+  let baseBetAmount = 0.2; // Initial base bet amount
+  let betAmount = baseBetAmount;
+  
+  // Tracking variables for dynamic bet adjustment
+  let moneyAtSetTargets = 0;
+  let roundBetAmounts = []; // Bet amounts for each round
+  let roundBetAmountsTotal = 0;
+  let baseRoundBetAmountsTotal = 0;
+  let investmentMultiplierTracker; // Tracks how many times initial investment has been multiplied
+
+  let nextBetAmounts = []; // Potential next increment of bet amounts
+  let nextBetAmountsTotal = 0;
+  let smallMilestoneTarget = 0;
+
+  // Initialize betting targets and strategy parameters
+  setTargets();
+
+  /**
+   * Initializes and resets betting strategy parameters.
+   * Calculates bet amounts, breakeven point, and milestone targets.
+   */
+  function setTargets() {
+	martingaleValue = baseMartingaleValue;
+	betAmount = baseBetAmount;
+    // Calculate bet amounts for current round and potential next increment
+    roundBetAmounts = getRoundBetAmounts();
+    baseRoundBetAmountsTotal = getRoundBetAmountsTotal(roundBetAmounts);
+    roundBetAmountsTotal = baseRoundBetAmountsTotal;
+
+    // Compute next potential bet amounts with a small increment
+    nextBetAmounts = getRoundBetAmounts(martingaleValue += 0.001);
+    nextBetAmountsTotal = getRoundBetAmountsTotal(nextBetAmounts);
+
+    // Capture current money and calculate total bet amounts
+    moneyAtSetTargets = getCurrentMoney();
+
+    // Calculate investment multiple and breakeven threshold
+    investmentMultiplierTracker = Math.floor(
+      moneyAtSetTargets / roundBetAmountsTotal
+    );
+
+    smallMilestoneTarget = nextBetAmountsTotal;
+
+    // Compute small milestone target to optimize betting efficiency
+    increaseBetConditions(moneyAtSetTargets);
+  }
+
+  /**
+   * Generates an array of progressive bet amounts for each round.
+   * Implements exponential bet growth using the Martingale strategy.
+   *
+   * @param {number} _betAmount - Initial bet amount
+   * @returns {number[]} Array of bet amounts for each round
+   */
+  function getRoundBetAmounts(_mv = baseMartingaleValue) {
+    console.log(_mv);
+    let tempBetAmount = betAmount;
+    const tempArr = [betAmount];
+
+    // Progressively increase bet amount for each round
+    for (let i = 1; i < rounds; i++) {
+      tempBetAmount = tempBetAmount * _mv;
+      tempArr[i] = Math.round(tempBetAmount * 100) / 100; // Round to 2 decimal places
+    }
+
+    return tempArr;
+  }
+
+  /**
+   * Calculates the total bet amount for a given round of bet amounts.
+   *
+   * @param {number[]} roundBetAmounts - Array of bet amounts
+   * @returns {number} Total bet amount for the round
+   */
+  function getRoundBetAmountsTotal(roundBetAmounts) {
+    return roundBetAmounts.reduce((total, betAmount) => total + betAmount, 0);
+  }
+
+  /**
+   * Checks and adjusts betting strategy based on current money balance.
+   * Implements small milestone increments to optimize betting efficiency.
+   *
+   * @param {number} currentMoney - Current available money balance
+   */
+  function increaseBetConditions(currentMoney) {
+    const bettingStatus = {
+        currentMoney: currentMoney,
+        majorMilestone:baseRoundBetAmountsTotal * (investmentMultiplierTracker + 1),
+        roundBetAmount: roundBetAmounts,
+        roundBetAmountsTotal: roundBetAmountsTotal,
+        nextBetAmounts: nextBetAmounts,
+        nextBetAmountsTotal: nextBetAmountsTotal,
+        smallMilestoneTarget: smallMilestoneTarget,
+        martingaleValue: martingaleValue
+    };
+
+    console.log(bettingStatus);
+
+    // Check if current balance meets milestone for bet increment
+    if (currentMoney >= smallMilestoneTarget) {
+	martingaleValue += 0.01
+      // Update bet amounts with small increment
+      roundBetAmounts = nextBetAmounts;
+      roundBetAmountsTotal = getRoundBetAmountsTotal(roundBetAmounts);
+      nextBetAmounts = getRoundBetAmounts(martingaleValue + 0.001);
+      nextBetAmountsTotal = getRoundBetAmountsTotal(nextBetAmounts);
+
+      // Recalculate small milestone target
+      smallMilestoneTarget =
+        nextBetAmountsTotal +
+        (roundBetAmountsTotal * investmentMultiplierTracker -
+          roundBetAmountsTotal);
+
+
+      increaseBetConditions(currentMoney);
+    }
+  }
+
+  /**
+   * Retrieves the current available money balance from the game interface.
+   *
+   * @returns {number} Current money balance
+   */
+  function getCurrentMoney() {
+    return parseFloat(
+      document.querySelector("#availableAmount").firstChild.textContent
+    );
+  }
+
+  /**
+   * Handles the betting logic for each round in the Martingale strategy.
+   * Manages win/loss conditions, bet amount adjustments, and investment tracking.
+   */
+  function handleRound() {
+    console.log(`RUNNING ROUND: ${currentRound + 1}`);
+
+    // Retrieve current round's cash-out multiplier
+    let multiplierCollectAmount = parseFloat(
+      document.querySelector("#bet-0").querySelectorAll(".cash-out1")[0]
+        .firstChild.textContent
+    );
+
+    // Determine round outcome and adjust strategy accordingly
+    winCondition = multiplierCollectAmount < betAmount * MULTIPLIER;
+    if (winCondition) {
+      console.log(
+        `ROUND LOST ${
+          currentRound + 1
+        } | ${winCondition} Multiplier Collect Amount: ${multiplierCollectAmount} | Bet Win Criteria| ${
+          betAmount * MULTIPLIER
+        }`
+      );
+      currentRound++;
+
+      // Check if maximum rounds have been reached
+      if (currentRound >= rounds) {
+        console.log(`Max rounds, ${rounds}, reached. Ending run`);
+        //observer.disconnect();
+        //return;
+          setTargets()
+      }
+    } else {
+      console.log(`ROUND WON ${currentRound + 1}: RESETTING BET AMOUNT|ROUND`);
+      currentRound = 0;
+
+let currentMoney = getCurrentMoney();
+let currentMultiple = Math.floor(currentMoney / baseRoundBetAmountsTotal);
+const percentageToNextMultiple = currentMultiple > 0
+  ? ((currentMoney % baseRoundBetAmountsTotal) / baseRoundBetAmountsTotal * 100).toFixed(2)
+  : 0; // To prevent division by zero
+
+const multiplierStatus = {
+    currentMoney,
+    baseRoundBetAmountsTotal,
+    currentMultiple,
+    previousMultiple: investmentMultiplierTracker,
+    isNewMilestone: currentMultiple > investmentMultiplierTracker,
+    percentageToNextMultiple
+};
+
+console.log('Investment Multiplier Status:', multiplierStatus);
+
+      if (currentMultiple > investmentMultiplierTracker) {
+        console.log(`Reached new investment multiple: ${currentMultiple}`);
+        setTargets();
+      } else {
+        // Adjust bet conditions for small milestone increments        
+        increaseBetConditions(currentMoney);
+      }
+
+
+
+    }
+
+    // Update bet amount and trigger next round
+    betAmount = roundBetAmounts[currentRound];
+    document.getElementById("bet-value-0").value = betAmount;
+
+    if (!document.getElementById("auto-cash-out-0").checked) {
+      document.getElementById("auto-cash-out-0").click();
+    }
+
+    // Get btn element
+    let betButton = document.getElementById("bet-0");
+    makeBet();
+
+    function makeBet(attempts = 0) {
+      console.log(`Attempting to place bet: Attempt ${attempts + 1}`);
+
+      // Click the bet button
+      betButton.click();
+
+      // Wait for a short duration and check if the bet was placed
+      setTimeout(() => {
+        let attrValue = betButton.getAttribute("data-attr");
+
+        // Check if the bet has been successfully placed
+        if (attrValue === null || attrValue !== "place bet 1") {
+          if (attempts < 3) {
+            // Retry if attempts are below the limit
+            makeBet(attempts + 1);
+          } else {
+            // Log failure if max attempts are reached
+            console.log("Failed to place bet after 4 attempts.");
+          }
+        } else {
+          console.log("Bet successfully placed.");
+        }
+      }, 1000);
+    }
+  }
+
+  // Create a MutationObserver to monitor game state changes
+  let observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+      if (
+        mutation.type === "attributes" &&
+        mutation.attributeName === "class"
+      ) {
+        // Trigger round handling when game state changes
+        if (!targetElement.classList.contains("game-started")) {
+          console.log("Game state changed, handling round");
+          handleRound();
+        }
+      }
+    }
+  });
+
+  // Start observing the target element for attribute changes
+  let config = { attributes: true };
+  observer.observe(targetElement, config);
+})();
